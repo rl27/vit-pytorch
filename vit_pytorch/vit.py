@@ -111,6 +111,24 @@ class ViT(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
+
+        # https://github.com/pytorch/vision/blob/a9a8220e0bcb4ce66a733f8c03a1c2f6c68d22cb/torchvision/models/resnet.py#L56-L72
+
+        self.conv1 = nn.Conv1d(7, 7, kernel_size=3, padding='same')
+        self.bn1 = nn.BatchNorm1d(7)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.conv2 = nn.Conv1d(7, 2, kernel_size=3, padding='same')
+        self.bn2 = nn.BatchNorm1d(2)
+        
+        self.linear = nn.Linear(400, 2)
+        self.dropout = nn.Dropout(dropout)
+
+        self.downsample = nn.Sequential(
+            nn.Conv1d(7, 2, kernel_size=1, stride=1, bias=False),
+            nn.BatchNorm1d(2)
+        )
+
     def forward(self, img):
         #x = self.to_patch_embedding(img)
         x = img
@@ -123,7 +141,29 @@ class ViT(nn.Module):
 
         x = self.transformer(x)
 
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        identity = x
 
+        x = self.conv1(x)
+        x = self.relu(x)
+        x = self.bn1(x)
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.bn2(x)
+
+        x = self.dropout(x)
+
+        identity = self.downsample(identity)
+        x += identity
+
+        x = torch.flatten(x, start_dim=1)
+        x = self.linear(x)
+        x = self.dropout(x)
+        
+        return x
+        
+        '''
+        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
         x = self.to_latent(x)
-        return self.mlp_head(x)
+        x = self.mlp_head(x)
+        return x
+        '''
