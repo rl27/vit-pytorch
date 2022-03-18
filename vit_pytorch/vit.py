@@ -147,13 +147,12 @@ class ViT(nn.Module):
         x = self.relu(x)
         x = self.bn1(x)
         x = self.conv2(x)
-        x = self.relu(x)
         x = self.bn2(x)
-
-        x = self.dropout(x)
 
         identity = self.downsample(identity)
         x += identity
+
+        x = self.relu(x)
 
         x = torch.flatten(x, start_dim=1)
         x = self.linear(x)
