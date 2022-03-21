@@ -96,9 +96,18 @@ class ViT(nn.Module):
 
         assert pool in {'cls', 'mean'}, 'pool type must be either cls (cls token) or mean (mean pooling)'
 
+        #self.to_patch_embedding = nn.Sequential(
+        #    Rearrange('b c (p n) -> b n (p c)', p = patch_length),
+        #    nn.Linear(patch_dim, dim),
+        #)
+
+        # (128, 6, 200) --> (128, 64, 25)
+        num_patches = 64
         self.to_patch_embedding = nn.Sequential(
-            Rearrange('b c (p n) -> b n (p c)', p = patch_length),
-            nn.Linear(patch_dim, dim),
+            nn.Conv1d(6, 8, kernel_size=3, stride=1, padding='same'),
+            nn.Conv1d(8, 16, kernel_size=3, stride=2, padding=1),
+            nn.Conv1d(16, 32, kernel_size=3, stride=2, padding=1),
+            nn.Conv1d(32, 64, kernel_size=3, stride=2, padding=1),
         )
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
