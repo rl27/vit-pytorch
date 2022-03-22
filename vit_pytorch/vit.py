@@ -101,10 +101,12 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        # (128, 6, 200) --> (128, 6, 50)
-        num_patches = 6
+        # (128, 6, 200) --> (128, 64, 50)
+        num_patches = 64
         self.to_patch_embedding = nn.Sequential(
-            nn.Conv1d(6, 6, kernel_size=25, stride=4, padding=12),
+            nn.Conv1d(6, 64, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
         )
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
@@ -123,6 +125,16 @@ class ViT(nn.Module):
             nn.LayerNorm(dim),
             nn.Linear(dim, num_classes)
         )
+
+        # self.attention_pool = nn.Linear(dim, 1)
+        # x = torch.matmul(F.softmax(attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
+
+        self.apply(self.init_weight)
+
+    @staticmethod
+    def init_weight(m):
+        if isinstance(m, nn.Conv1d):
+            nn.init.kaiming_normal_(m.weight)
 
     def forward(self, img):
         x = self.to_patch_embedding(img)
