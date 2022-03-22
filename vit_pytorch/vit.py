@@ -101,10 +101,10 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        # (128, 6, 200) --> (128, 64, 25)
+        # (128, 6, 200) --> (128, 6, 50)
         num_patches = 64
         self.to_patch_embedding = nn.Sequential(
-            nn.Conv1d(6, 6, kernel_size=7, stride=4, padding=3),
+            nn.Conv1d(6, 6, kernel_size=25, stride=4, padding=12),
         )
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
