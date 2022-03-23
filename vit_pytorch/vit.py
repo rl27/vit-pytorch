@@ -101,10 +101,10 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        # (128, 6, 200) --> (128, 64, 50)
-        num_patches = 16
+        # (128, 6, 200) --> (128, 32, 50)
+        num_patches = 32
         self.to_patch_embedding = nn.Sequential(
-            nn.Conv1d(6, 16, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.Conv1d(6, 32, kernel_size=7, stride=2, padding=3, bias=False),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
         )
