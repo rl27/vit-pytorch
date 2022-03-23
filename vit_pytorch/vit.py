@@ -101,16 +101,13 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        # (128, 6, 200) --> (128, 32, 50)
-        num_patches = 32
+        # (128, 3, 200) --> (128, 3, 200)
+        num_patches = 12
         self.to_patch_embedding = nn.Sequential(
-            nn.Conv1d(6, 32, kernel_size=7, stride=2, padding=3, bias=False),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+            nn.Conv1d(3, 3, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
-        #self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         #self.pos_embedding = nn.Parameter(torch.randn(1, image_size + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
@@ -146,19 +143,21 @@ class ViT(nn.Module):
         
 
     def forward(self, img):
-        x = self.to_patch_embedding(img)
+        a, b = torch.split(img, split_size_or_sections=3, dim=1)
+        x = torch.cat((a, self.to_patch_embedding(a), b, self.to_patch_embedding(b)), dim=1)
+        #x = self.to_patch_embedding(img)
         #x = img
         b, n, _ = x.shape
 
-        #cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
-        #x = torch.cat((cls_tokens, x), dim=1)
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
+        x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
         x = self.transformer(x)
 
-        #x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
-        x = torch.matmul(torch.nn.functional.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
+        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        #x = torch.matmul(torch.nn.functional.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
 
         x = self.to_latent(x)
         return self.mlp_head(x)
