@@ -146,9 +146,10 @@ class ViT(nn.Module):
 
     def forward(self, img):
         a, b = torch.split(img, split_size_or_sections=3, dim=1)
-        x = torch.cat((gaussian_filter1d(a, sigma=1.0, axis=0),
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        x = torch.cat((torch.from_numpy(gaussian_filter1d(a.detach().clone().cpu(), sigma=1.0, axis=0)).to(device),
                        self.to_patch_embedding(a),
-                       gaussian_filter1d(b, sigma=1.0, axis=0),
+                       torch.from_numpy(gaussian_filter1d(b.detach().clone().cpu(), sigma=1.0, axis=0)).to(device),
                        self.to_patch_embedding(b)
                       ), dim=1)
         #x = self.to_patch_embedding(img)
