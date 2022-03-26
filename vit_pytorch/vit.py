@@ -4,6 +4,8 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
+from scipy.ndimage import gaussian_filter1d
+
 # helpers
 
 def pair(t):
@@ -144,7 +146,11 @@ class ViT(nn.Module):
 
     def forward(self, img):
         a, b = torch.split(img, split_size_or_sections=3, dim=1)
-        x = torch.cat((a, self.to_patch_embedding(a), b, self.to_patch_embedding(b)), dim=1)
+        x = torch.cat((gaussian_filter1d(a, sigma=1.0, axis=0),
+                       self.to_patch_embedding(a),
+                       gaussian_filter1d(b, sigma=1.0, axis=0),
+                       self.to_patch_embedding(b)
+                      ), dim=1)
         #x = self.to_patch_embedding(img)
         #x = img
         b, n, _ = x.shape
