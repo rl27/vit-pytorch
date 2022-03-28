@@ -67,17 +67,16 @@ class Transformer(nn.Module):
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
         super().__init__()
         self.layers = nn.ModuleList([])
-        self.sk1 = nn.Parameter(torch.full((1,), 0.5))
-        self.sk2 = nn.Parameter(torch.full((1,), 0.5))
+        self.skw = nn.ParameterList([nn.Parameter(torch.full((1,), 0.5)) for _ in range(2*depth)])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout)),
             ]))
     def forward(self, x):
-        for attn, ff in self.layers:
-            x = self.sk1 * attn(x) + (1-self.sk1) * x
-            x = self.sk2 * ff(x) + (1-self.sk2) * x
+        for i, (attn, ff) in enumerate(self.layers):
+            x = self.skw[2*i] * attn(x) + (1-self.skw[2*i]) * x
+            x = self.skw[2*i+1] * ff(x) + (1-self.skw[2*i+1]) * x
         return x
 
 class ViT(nn.Module):
