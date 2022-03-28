@@ -67,8 +67,8 @@ class Transformer(nn.Module):
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
         super().__init__()
         self.layers = nn.ModuleList([])
-        self.sk1 = nn.Parameter(torch.randn(1))
-        self.sk2 = nn.Parameter(torch.randn(1))
+        self.sk1 = nn.Parameter(torch.full((1,), 0.5))
+        self.sk2 = nn.Parameter(torch.full((1,), 0.5))
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
