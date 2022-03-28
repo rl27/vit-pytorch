@@ -67,6 +67,8 @@ class Transformer(nn.Module):
     def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
         super().__init__()
         self.layers = nn.ModuleList([])
+        self.sk1 = nn.Parameter(torch.randn(1))
+        self.sk2 = nn.Parameter(torch.randn(1))
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
@@ -74,8 +76,8 @@ class Transformer(nn.Module):
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
-            x = attn(x) + x
-            x = ff(x) + x
+            x = self.sk1 * attn(x) + (1-self.sk1) * x
+            x = self.sk2 * ff(x) + (1-self.sk2) * x
         return x
 
 class ViT(nn.Module):
@@ -103,11 +105,14 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
+        num_patches = 6
+
         # (128, 3, 200) --> (128, 3, 200)
-        num_patches = 12
+        '''
         self.to_patch_embedding = nn.Sequential(
             nn.Conv1d(3, 3, kernel_size=3, stride=1, padding=1, bias=False),
         )
+        '''
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         #self.pos_embedding = nn.Parameter(torch.randn(1, image_size + 1, dim))
@@ -126,34 +131,11 @@ class ViT(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
-        self.attention_pool = nn.Linear(dim, 1)
-
-        self.apply(self.init_weight)
-
-
-    @staticmethod
-    def init_weight(m):
-        if isinstance(m, nn.Conv1d):
-            nn.init.kaiming_normal_(m.weight)
-        elif isinstance(m, nn.Linear):
-            nn.init.trunc_normal_(m.weight, std=.02)
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
-        
+        #self.attention_pool = nn.Linear(dim, 1)
 
     def forward(self, img):
-        a, b = torch.split(img, split_size_or_sections=3, dim=1)
-        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        x = torch.cat((torch.from_numpy(gaussian_filter1d(a.detach().clone().cpu(), sigma=1.0, axis=0)).to(device),
-                       self.to_patch_embedding(a),
-                       torch.from_numpy(gaussian_filter1d(b.detach().clone().cpu(), sigma=1.0, axis=0)).to(device),
-                       self.to_patch_embedding(b)
-                      ), dim=1)
         #x = self.to_patch_embedding(img)
-        #x = img
+        x = img
         b, n, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
