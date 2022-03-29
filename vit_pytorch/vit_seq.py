@@ -94,13 +94,11 @@ class ViT(nn.Module):
         self.pos_embedding = nn.Parameter(torch.randn(1, 6, dim))
 
     def forward(self, img):
-        x = img
+        x = img.permute(0, 2, 1)
         b, n, _ = x.shape
 
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
-
-        x = x.permute(0, 2, 1)
 
         x = self.transformer(x).permute(0, 2, 1)
 
