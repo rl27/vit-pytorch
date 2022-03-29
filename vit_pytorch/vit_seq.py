@@ -91,6 +91,8 @@ class ViT(nn.Module):
 
         self.avg_pool = nn.AdaptiveAvgPool1d(2)
 
+        self.pos_embedding = nn.Parameter(torch.randn(1, 6, dim))
+
     def forward(self, img):
         x = img
         b, n, _ = x.shape
