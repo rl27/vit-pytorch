@@ -133,7 +133,7 @@ class Conv(nn.Module):
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
 
-        return x
+        return conv
 
 class ViT(nn.Module):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
