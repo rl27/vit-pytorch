@@ -42,6 +42,8 @@ class Attention(nn.Module):
         self.scale = dim_head ** -0.5
 
         self.attend = nn.Softmax(dim = -1)
+        self.dropout = nn.Dropout(dropout)
+
         self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
 
         self.to_out = nn.Sequential(
@@ -56,6 +58,7 @@ class Attention(nn.Module):
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
         attn = self.attend(dots)
+        attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
@@ -109,6 +112,8 @@ class Conv(nn.Module):
             nn.ReLU(inplace=True),
         )
 
+        self.split_conv = Rearrange('b (c a) d -> b c (a d)', c = 6)
+
         '''
         self.fc = nn.Sequential(
             nn.Linear(800, 200),
@@ -129,6 +134,7 @@ class Conv(nn.Module):
         conv = self.conv2(conv) + residual2
         conv = self.relu(conv)
         conv = self.conv3(conv)
+        conv = self.split_conv(conv)
 
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
