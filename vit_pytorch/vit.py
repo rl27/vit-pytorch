@@ -104,8 +104,8 @@ class Conv(nn.Module):
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv1d(64, 6, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(6),
+            nn.Conv1d(64, 24, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(24),
             nn.ReLU(inplace=True),
         )
 
@@ -186,8 +186,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(1500),
-            nn.Linear(1500, 2)
+            nn.LayerNorm(2400),
+            nn.Linear(2400, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
@@ -215,10 +215,13 @@ class ViT(nn.Module):
 
         #cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         #x = torch.cat((cls_tokens, x), dim=1)
+        c = x
+        c = self.dropout(c)
+        c = self.conv(c)
+
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
-        c = self.conv(x)
         x = self.transformer(x)
 
         x = torch.cat((x, c), -1)
