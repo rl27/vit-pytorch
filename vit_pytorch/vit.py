@@ -97,7 +97,7 @@ class Conv(nn.Module):
 
         self.conv2 = nn.Sequential(
             nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(64)
+            nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
             nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm1d(64),
