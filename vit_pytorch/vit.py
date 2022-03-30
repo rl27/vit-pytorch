@@ -4,8 +4,6 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-from scipy.ndimage import gaussian_filter1d
-
 # helpers
 
 def pair(t):
@@ -79,6 +77,64 @@ class Transformer(nn.Module):
             x = self.skw[2*i+1] * ff(x) + (2-self.skw[2*i+1]) * x
         return x
 
+class Conv(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv0 = nn.Sequential(
+            nn.Conv1d(6, 64, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.BatchNorm1d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
+        )
+
+        self.conv1 = nn.Sequential(
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64)
+            nn.ReLU(inplace=True),
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64),
+        )
+
+        self.conv2 = nn.Sequential(
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64)
+            nn.ReLU(inplace=True),
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64)
+        )
+
+        self.conv3 = nn.Sequential(
+            nn.Conv1d(64, 6, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(6),
+            nn.ReLU(inplace=True)
+        )
+
+        '''
+        self.fc = nn.Sequential(
+            nn.Linear(800, 200),
+            nn.ReLU(True),
+            nn.Dropout(dropout),
+            nn.Linear(200, 2),
+        )
+        '''
+
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self, x):
+        conv = self.conv0(x)
+        residual1 = conv
+        conv = self.conv1(conv) + residual1
+        conv = self.relu(conv)
+        residual2 = conv
+        conv = self.conv2(conv) + residual2
+        conv = self.relu(conv)
+        conv = self.conv3(conv)
+
+        #x = x.view(x.size(0), -1)
+        #x = self.fc(x)
+
+        return x
+
 class ViT(nn.Module):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
         super().__init__()
@@ -109,43 +165,69 @@ class ViT(nn.Module):
         # (128, 3, 200) --> (128, 3, 200)
         '''
         self.to_patch_embedding = nn.Sequential(
-            nn.Conv1d(3, 3, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv1d(3, 3, kernel_size=7, stride=1, padding='same', bias=False),
+            nn.BatchNorm1d(),
+            nn.ReLU(inplace=True)
         )
         '''
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        #self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
         #self.pos_embedding = nn.Parameter(torch.randn(1, image_size + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
+        self.conv = Conv()
 
         self.pool = pool
-        self.to_latent = nn.Identity()
+        #self.to_latent = nn.Identity()
 
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(dim),
-            nn.Linear(dim, num_classes)
+            nn.LayerNorm(1500),
+            nn.Linear(1500, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
 
+        self.apply(self.init_weight)
+
+
+    @staticmethod
+    def init_weight(m):
+        if isinstance(m, nn.Conv1d):
+            nn.init.kaiming_normal_(m.weight)
+        elif isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    
     def forward(self, img):
         #x = self.to_patch_embedding(img)
         x = img
         b, n, _ = x.shape
 
-        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
-        x = torch.cat((cls_tokens, x), dim=1)
+        #cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
+        #x = torch.cat((cls_tokens, x), dim=1)
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
+        c = self.conv(x)
         x = self.transformer(x)
 
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = torch.cat((x, c), -1)
+
+        #x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
         #x = torch.matmul(torch.nn.functional.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
 
-        x = self.to_latent(x)
+        #x = self.to_latent(x)
+
+        x = x.view(x.size(0), -1)
+
         return self.mlp_head(x)
