@@ -136,7 +136,8 @@ class Conv(nn.Module):
     def forward(self, x):
         conv = torch.swapaxes(x, 1, 2)
         conv = self.input(conv)
-        conv = self.conv0(x)
+        conv = torch.swapaxes(conv, 1, 2)
+        conv = self.conv0(conv)
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
