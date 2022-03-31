@@ -137,7 +137,7 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        num_patches = 64
+        num_patches = 6
 
         # (128, 3, 200) --> (128, 3, 200)
         '''
@@ -149,7 +149,7 @@ class ViT(nn.Module):
         '''
 
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 200))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
