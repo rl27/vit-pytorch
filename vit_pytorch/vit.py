@@ -84,13 +84,8 @@ class Conv(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.input = nn.Sequential(
-            nn.Linear(6, 12),
-            nn.GLU()
-        )
-
         self.conv0 = nn.Sequential(
-            nn.Conv1d(6, 64, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.Conv1d(7, 64, kernel_size=7, stride=2, padding=3, bias=False),
             nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool1d(kernel_size=3, stride=2, padding=1),
@@ -104,48 +99,13 @@ class Conv(nn.Module):
             nn.BatchNorm1d(64),
         )
 
-        self.conv2 = nn.Sequential(
-            nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm1d(128),
-            nn.ReLU(inplace=True),
-            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(128),
-        )
-
-        self.downsample = nn.Conv1d(64, 128, kernel_size=1, stride=2, bias=False)
-
-        self.conv3 = nn.Sequential(
-            nn.Conv1d(128, 48, kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm1d(48),
-            nn.ReLU(inplace=True),
-        )
-
-        self.split_conv = Rearrange('b (c a) d -> b c (a d)', c = 6)
-
-        '''
-        self.fc = nn.Sequential(
-            nn.Linear(800, 200),
-            nn.ReLU(True),
-            nn.Dropout(dropout),
-            nn.Linear(200, 2),
-        )
-        '''
-
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
-        conv = torch.swapaxes(x, 1, 2)
-        conv = self.input(conv)
-        conv = torch.swapaxes(conv, 1, 2)
         conv = self.conv0(conv)
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
-        residual2 = self.downsample(conv)
-        conv = self.conv2(conv) + residual2
-        conv = self.relu(conv)
-        conv = self.conv3(conv)
-        conv = self.split_conv(conv)
 
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
@@ -188,9 +148,7 @@ class ViT(nn.Module):
         )
         '''
 
-        #self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, dim))
-        #self.pos_embedding = nn.Parameter(torch.randn(1, image_size + 1, dim))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
 
@@ -198,13 +156,13 @@ class ViT(nn.Module):
         self.conv = Conv()
 
         self.pool = pool
-        #self.to_latent = nn.Identity()
+        self.to_latent = nn.Identity()
 
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(2400),
-            nn.Linear(2400, 2)
+            nn.LayerNorm(200),
+            nn.Linear(200, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
@@ -230,23 +188,18 @@ class ViT(nn.Module):
         x = img
         b, n, _ = x.shape
 
-        #cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
-        #x = torch.cat((cls_tokens, x), dim=1)
+        cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
+        x = torch.cat((cls_tokens, x), dim=1)
 
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
-        c = self.conv(x)
+        x = self.conv(x)
 
         x = self.transformer(x)
 
-        x = torch.cat((x, c), -1)
-
-        #x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
         #x = torch.matmul(torch.nn.functional.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
 
-        #x = self.to_latent(x)
-
-        x = x.view(x.size(0), -1)
-
+        x = self.to_latent(x)
         return self.mlp_head(x)
