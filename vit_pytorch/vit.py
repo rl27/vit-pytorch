@@ -115,7 +115,7 @@ class Conv(nn.Module):
         self.downsample = nn.Conv1d(64, 128, kernel_size=1, stride=2, bias=False)
 
         self.conv3 = nn.Sequential(
-            nn.Conv1d(128, 24, kernel_size=1, stride=1, bias=False),
+            nn.Conv1d(128, 48, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm1d(48),
             nn.ReLU(inplace=True),
         )
