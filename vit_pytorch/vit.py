@@ -102,7 +102,7 @@ class Conv(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
-        conv = self.conv0(conv)
+        conv = self.conv0(x)
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
