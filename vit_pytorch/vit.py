@@ -137,7 +137,7 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        num_patches = 6
+        num_patches = 64
 
         # (128, 3, 200) --> (128, 3, 200)
         '''
