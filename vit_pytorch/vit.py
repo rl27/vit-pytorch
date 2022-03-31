@@ -99,6 +99,10 @@ class Conv(nn.Module):
             nn.BatchNorm1d(64),
         )
 
+        self.downsample = nn.Sequential(
+            nn.Conv1d(64, 16, kernel_size=1, bias=False)
+        )
+
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
@@ -106,6 +110,7 @@ class Conv(nn.Module):
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
+        conv = self.downsample(conv)
 
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
