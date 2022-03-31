@@ -161,8 +161,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(200),
-            nn.Linear(200, 2)
+            nn.LayerNorm(50),
+            nn.Linear(50, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
