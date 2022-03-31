@@ -83,6 +83,12 @@ class Transformer(nn.Module):
 class Conv(nn.Module):
     def __init__(self):
         super().__init__()
+
+        self.input = nn.Sequential(
+            nn.Linear(6, 12),
+            nn.GLU()
+        )
+
         self.conv0 = nn.Sequential(
             nn.Conv1d(6, 64, kernel_size=7, stride=2, padding=3, bias=False),
             nn.BatchNorm1d(64),
@@ -99,16 +105,18 @@ class Conv(nn.Module):
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(64),
+            nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
-            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(64),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(128),
         )
 
+        self.downsample = nn.Conv1d(64, 128, kernel_size=1, stride=2, bias=False)
+
         self.conv3 = nn.Sequential(
-            nn.Conv1d(64, 24, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm1d(24),
+            nn.Conv1d(128, 24, kernel_size=1, stride=1, bias=False),
+            nn.BatchNorm1d(48),
             nn.ReLU(inplace=True),
         )
 
@@ -126,11 +134,13 @@ class Conv(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
+        conv = torch.swapaxes(x, 1, 2)
+        conv = self.input(conv)
         conv = self.conv0(x)
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
-        residual2 = conv
+        residual2 = self.downsample(conv)
         conv = self.conv2(conv) + residual2
         conv = self.relu(conv)
         conv = self.conv3(conv)
@@ -221,12 +231,11 @@ class ViT(nn.Module):
 
         #cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         #x = torch.cat((cls_tokens, x), dim=1)
-        c = x
-        c = self.dropout(c)
-        c = self.conv(c)
 
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
+
+        c = self.conv(x)
 
         x = self.transformer(x)
 
