@@ -158,7 +158,7 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-        self.conv = Conv()
+        #self.conv = Conv()
 
         self.pool = pool
         self.to_latent = nn.Identity()
@@ -166,8 +166,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(50),
-            nn.Linear(50, 2)
+            nn.LayerNorm(200),
+            nn.Linear(200, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
@@ -199,7 +199,7 @@ class ViT(nn.Module):
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
-        x = self.conv(x)
+        #x = self.conv(x)
 
         x = self.transformer(x)
 
