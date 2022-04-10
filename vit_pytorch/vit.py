@@ -280,7 +280,7 @@ class ViT(nn.Module):
     
     def forward(self, img):
         #x = self.to_patch_embedding(img)
-        x = img
+        x = self.conv(img)
         b, n, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
@@ -288,8 +288,6 @@ class ViT(nn.Module):
 
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
-
-        x = self.conv(x)
 
         x = self.transformer(x)
 
