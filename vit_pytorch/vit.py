@@ -99,23 +99,113 @@ class Conv(nn.Module):
             nn.BatchNorm1d(64),
         )
 
-        self.downsample = nn.Sequential(
-            nn.Conv1d(64, 16, kernel_size=1, bias=False)
+        self.conv2 = nn.Sequential(
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(64),
+        )
+
+        self.conv3 = nn.Sequential(
+            nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(128),
+        )
+
+        self.downsample1 = nn.Sequential(
+            nn.Conv1d(64, 128, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm1d(128)
+        )
+
+        self.conv4 = nn.Sequential(
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(128, 128, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(128),
+        )
+
+        self.conv5 = nn.Sequential(
+            nn.Conv1d(128, 256, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+        )
+
+        self.downsample2 = nn.Sequential(
+            nn.Conv1d(128, 256, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm1d(256)
+        )
+
+        self.conv6 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+        )
+
+        self.conv7 = nn.Sequential(
+            nn.Conv1d(256, 512, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(512),
+        )
+
+        self.downsample3 = nn.Sequential(
+            nn.Conv1d(256, 512, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm1d(512)
+        )
+
+        self.conv8 = nn.Sequential(
+            nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(512),
         )
 
         self.relu = nn.ReLU(inplace=True)
         
     def forward(self, x):
         conv = self.conv0(x)
+
         residual1 = conv
         conv = self.conv1(conv) + residual1
         conv = self.relu(conv)
-        conv = self.downsample(conv)
+
+        residual2 = conv
+        conv = self.conv2(conv) + residual2
+        residual3 = self.downsample1(conv)
+        conv = self.conv3(conv) + residual3
+        conv = self.relu(conv)
+
+        residual4 = conv
+        conv = self.conv4(conv) + residual4
+        residual5 = self.downsample2(conv)
+        conv = self.conv5(conv) + residual5
+        conv = self.relu(conv)
+
+        residual6 = conv
+        conv = self.conv6(conv) + residual6
+        residual7 = self.downsample3(conv)
+        conv = self.conv7(conv) + residual7
+        conv = self.relu(conv)
+
+        residual8 = conv
+        conv = self.conv8(conv) + residual8
+        
+
 
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
 
-        return conv
+        return torch.transpose(conv, 1, 2)
 
 class ViT(nn.Module):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0.):
@@ -142,7 +232,7 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        num_patches = 6
+        num_patches = 7
 
         # (128, 3, 200) --> (128, 3, 200)
         '''
@@ -153,8 +243,8 @@ class ViT(nn.Module):
         )
         '''
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 200))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 200))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 512))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
@@ -166,8 +256,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(200),
-            nn.Linear(200, 2)
+            nn.LayerNorm(512),
+            nn.Linear(512, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
