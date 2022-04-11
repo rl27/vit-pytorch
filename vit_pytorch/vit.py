@@ -232,7 +232,7 @@ class ViT(nn.Module):
         #    nn.Linear(patch_dim, dim),
         #)
 
-        num_patches = 7
+        num_patches = 6
 
         # (128, 3, 200) --> (128, 3, 200)
         '''
@@ -243,8 +243,8 @@ class ViT(nn.Module):
         )
         '''
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 512))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
@@ -256,8 +256,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(512),
-            nn.Linear(512, 2)
+            nn.LayerNorm(dim),
+            nn.Linear(dim, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
@@ -280,7 +280,7 @@ class ViT(nn.Module):
     
     def forward(self, img):
         #x = self.to_patch_embedding(img)
-        x = self.conv(img)
+        x = img
         b, n, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
@@ -289,9 +289,13 @@ class ViT(nn.Module):
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
+        cc = self.conv(img)
+
         x = self.transformer(x)
 
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = torch.cat((x, cc), 2)
+
+        x = x.mean(dim = 1) # if self.pool == 'mean' else x[:, 0]
         #x = torch.matmul(torch.nn.functional.softmax(self.attention_pool(x), dim=1).transpose(-1, -2), x).squeeze(-2)
 
         x = self.to_latent(x)
