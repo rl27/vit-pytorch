@@ -76,8 +76,8 @@ class Transformer(nn.Module):
             ]))
     def forward(self, x):
         for i, (attn, ff) in enumerate(self.layers):
-            x = self.skw[2*i] * attn(x) + (2-self.skw[2*i]) * x
-            x = self.skw[2*i+1] * ff(x) + (2-self.skw[2*i+1]) * x
+            x = attn(x) + x
+            x = ff(x) + x
         return x
 
 class Conv(nn.Module):
