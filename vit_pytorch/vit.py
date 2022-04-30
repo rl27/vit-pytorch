@@ -80,6 +80,7 @@ class Transformer(nn.Module):
             x = self.skw[2*i+1] * ff(x) + (2-self.skw[2*i+1]) * x
         return x
 
+
 class Conv(nn.Module):
     def __init__(self):
         super().__init__()
@@ -131,6 +132,9 @@ class Conv(nn.Module):
         self.conv5 = nn.Sequential(
             nn.Conv1d(128, 256, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
         )
 
         self.downsample2 = nn.Sequential(
@@ -138,6 +142,19 @@ class Conv(nn.Module):
             nn.BatchNorm1d(256)
         )
 
+        self.conv6 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+        )
+
+        self.conv7 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(512),
+            nn.ReLU(inplace=True),
+        )
 
         self.relu = nn.ReLU(inplace=True)
         
@@ -159,6 +176,12 @@ class Conv(nn.Module):
         residual5 = self.downsample2(conv)
         conv = self.conv5(conv) + residual5
         conv = self.relu(conv)
+
+        residual6 = conv
+        conv = self.conv6(conv) + residual6
+        conv = self.conv7(conv)
+        
+
 
         #x = x.view(x.size(0), -1)
         #x = self.fc(x)
