@@ -201,8 +201,8 @@ class ViT(nn.Module):
         )
         '''
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 512))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, 512))
+        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, 256))
+        self.cls_token = nn.Parameter(torch.randn(1, 1, 256))
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
@@ -214,8 +214,8 @@ class ViT(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(512),
-            nn.Linear(512, 2)
+            nn.LayerNorm(256),
+            nn.Linear(256, 2)
         )
 
         #self.attention_pool = nn.Linear(dim, 1)
