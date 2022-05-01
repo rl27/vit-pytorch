@@ -177,22 +177,31 @@ class Conv(nn.Module):
 
         residual2 = conv
         conv = self.conv2(conv) + residual2
+        conv = self.relu(conv)
+
         residual3 = self.downsample1(conv)
         conv = self.conv3(conv) + residual3
         conv = self.relu(conv)
 
         residual4 = conv
         conv = self.conv4(conv) + residual4
+        conv = self.relu(conv)
+
         residual5 = self.downsample2(conv)
         conv = self.conv5(conv) + residual5
         conv = self.relu(conv)
 
         residual6 = conv
         conv = self.conv6(conv) + residual6
+        conv = self.relu(conv)
+
         residual7 = conv
         conv = self.conv7(conv) + residual7
+        conv = self.relu(conv)
+
         residual8 = conv
         conv = self.conv8(conv) + residual8
+        conv = self.relu(conv)
         
 
 
