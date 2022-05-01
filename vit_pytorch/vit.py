@@ -151,11 +151,16 @@ class Conv(nn.Module):
         )
 
         self.conv7 = nn.Sequential(
-            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
             nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm1d(256),
+        )
+
+        self.downsample3 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm1d(256)
         )
 
         self.conv8 = nn.Sequential(
@@ -195,7 +200,7 @@ class Conv(nn.Module):
         conv = self.conv6(conv) + residual6
         conv = self.relu(conv)
 
-        residual7 = conv
+        residual7 = self.downsample3(conv)
         conv = self.conv7(conv) + residual7
         conv = self.relu(conv)
 
