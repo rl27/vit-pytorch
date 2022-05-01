@@ -151,7 +151,7 @@ class Conv(nn.Module):
         )
 
         self.conv7 = nn.Sequential(
-            nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
             nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
@@ -159,7 +159,7 @@ class Conv(nn.Module):
         )
 
         self.conv8 = nn.Sequential(
-            nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
             nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
