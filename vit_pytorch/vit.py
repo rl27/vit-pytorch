@@ -154,6 +154,16 @@ class Conv(nn.Module):
             nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
             nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+        )
+
+        self.conv8 = nn.Sequential(
+            nn.Conv1d(256, 256, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv1d(256, 256, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.BatchNorm1d(256),
         )
 
         self.relu = nn.ReLU(inplace=True)
@@ -179,7 +189,10 @@ class Conv(nn.Module):
 
         residual6 = conv
         conv = self.conv6(conv) + residual6
-        conv = self.conv7(conv)
+        residual7 = conv
+        conv = self.conv7(conv) + residual7
+        residual8 = conv
+        conv = self.conv8(conv) + residual8
         
 
 
